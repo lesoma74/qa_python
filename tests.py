@@ -1,24 +1,72 @@
+import pytest
+
+# Импортируем класс BooksCollector из соответствующего модуля
 from main import BooksCollector
 
-# класс TestBooksCollector объединяет набор тестов, которыми мы покрываем наше приложение BooksCollector
-# обязательно указывать префикс Test
+
 class TestBooksCollector:
 
-    # пример теста:
-    # обязательно указывать префикс test_
-    # дальше идет название метода, который тестируем add_new_book_
-    # затем, что тестируем add_two_books - добавление двух книг
-    def test_add_new_book_add_two_books(self):
-        # создаем экземпляр (объект) класса BooksCollector
-        collector = BooksCollector()
+    @pytest.fixture
+    def collector(self):
+        return BooksCollector()
 
-        # добавляем две книги
-        collector.add_new_book('Гордость и предубеждение и зомби')
-        collector.add_new_book('Что делать, если ваш кот хочет вас убить')
+    @pytest.mark.parametrize("book_name", [
+        "The Hobbit",
+        "1984",
+        "To Kill a Mockingbird",
+    ])
+    def test_add_new_book(self, collector, book_name):
+        collector.add_new_book(book_name)
+        assert book_name in collector.get_books_genre()
 
-        # проверяем, что добавилось именно две
-        # словарь books_rating, который нам возвращает метод get_books_rating, имеет длину 2
-        assert len(collector.get_books_rating()) == 2
+    @pytest.mark.parametrize("book_name, genre", [
+        ("The Hobbit", "Фантастика"),
+        ("1984", "Детективы"),
+        ("To Kill a Mockingbird", "Мультфильмы"),
+    ])
+    def test_set_book_genre(self, collector, book_name, genre):
+        collector.add_new_book(book_name)
+        collector.set_book_genre(book_name, genre)
+        assert collector.get_book_genre(book_name) == genre
 
-    # напиши свои тесты ниже
-    # чтобы тесты были независимыми в каждом из них создавай отдельный экземпляр класса BooksCollector()
+    @pytest.mark.parametrize("initial_books, genre, expected_books", [
+        ({"The Hobbit": "Фантастика", "1984": "Детективы"}, "Фантастика", ["The Hobbit"]),
+        ({"The Hobbit": "Фантастика", "1984": "Детективы"}, "Детективы", ["1984"]),
+        ({"The Hobbit": "Фантастика", "1984": "Детективы"}, "Мультфильмы", []),
+    ])
+    def test_get_books_with_specific_genre(self, collector, initial_books, genre, expected_books):
+        collector.books_genre = initial_books
+        assert collector.get_books_with_specific_genre(genre) == expected_books
+
+    @pytest.mark.parametrize("initial_books, expected_books", [
+        ({"The Hobbit": "Фантастика", "1984": "Детективы", "To Kill a Mockingbird": "Мультфильмы"}, ["The Hobbit", "To Kill a Mockingbird"]),
+        ({"The Hobbit": "Фантастика", "1984": "Детективы"}, ["The Hobbit"]),
+        ({"To Kill a Mockingbird": "Мультфильмы"}, ["To Kill a Mockingbird"]),
+    ])
+    def test_get_books_for_children(self, collector, initial_books, expected_books):
+        collector.books_genre = initial_books
+        assert collector.get_books_for_children() == expected_books
+
+    @pytest.mark.parametrize("book_name", [
+        "The Hobbit",
+        "1984",
+        "To Kill a Mockingbird",
+    ])
+    def test_add_book_in_favorites(self, collector, book_name):
+        collector.add_new_book(book_name)
+        collector.add_book_in_favorites(book_name)
+        assert book_name in collector.get_list_of_favorites_books()
+
+    @pytest.mark.parametrize("initial_favorites, book_name, expected_favorites", [
+        (["The Hobbit"], "The Hobbit", []),
+        (["The Hobbit", "1984"], "1984", ["The Hobbit"]),
+    ])
+    def test_delete_book_from_favorites(self, collector, initial_favorites, book_name, expected_favorites):
+        collector.favorites = initial_favorites
+        collector.delete_book_from_favorites(book_name)
+        assert collector.get_list_of_favorites_books() == expected_favorites
+
+    def test_get_list_of_favorites_books(self, collector):
+        collector.add_new_book("The Hobbit")
+        collector.add_book_in_favorites("The Hobbit")
+        assert collector.get_list_of_favorites_books() == ["The Hobbit"]
