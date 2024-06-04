@@ -6,10 +6,6 @@ from main import BooksCollector
 
 class TestBooksCollector:
 
-    @pytest.fixture
-    def collector(self):
-        return BooksCollector()
-
     @pytest.mark.parametrize("book_name", [
         "The Hobbit",
         "1984",
